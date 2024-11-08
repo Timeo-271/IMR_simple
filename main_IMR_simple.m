@@ -27,11 +27,12 @@ T_inf = 298.15; % Far field temperature (K)
 %%%%% Type of cavitation driving force %%%%%
 %     LIC = Laser induced cavitation
 %     UIC = Ultrasound induced cavitation 
-cav_type = 'UIC'; %%%%% TODO
+cav_type = 'LIC'; %%%%% TODO
 
 %%%%% Driving conditions %%%%%
 if strcmp(cav_type,'LIC') == 1
     Rmax = 10*R0; % Maximum (initial) bubble radius for LIC (m) %%%%% TODO
+    L = 3*R0; % The distance from the bubble center to the wall
     
     PA = 0; omega = 0; delta = 0; n = 0; % These values won't be used in LIC
     
@@ -114,6 +115,7 @@ tspan_star = tspan/tc; % Dimensionless time span
 %
 %%%%% Non-dimensional variable only used for LIC %%%%%
 Req = R0/Rmax; % Dimensionless equilibrium bubble radius
+La = L/Rc; % Parameter lambda, describe the length ratio between the distance from the bubble center to the wall and the bubble maximum radius
 
 %%%%% Non-dimensional variables only used for UIC %%%%%
 PA_star = PA/P_inf; % Dimensionless amplitude of the ultrasound pulse
@@ -121,7 +123,7 @@ omega_star = omega*tc; % Dimensionless frequency of the ultrasound pulse
 delta_star = delta/tc; % Dimensionless time shift for the ultrasound pulse
 
 % Place the necessary quantities in a parameters vector
-params = [NT C_star We Ca alpha Re Rv Ra kappa fom chi A_star B_star Pv_star Req PA_star omega_star delta_star n];
+params = [NT C_star We Ca alpha Re Rv Ra kappa fom chi A_star B_star Pv_star Req La PA_star omega_star delta_star n];
 
 %%
 % Initial conditions
@@ -231,10 +233,11 @@ A_star = params(12); % Dimensionless A parameter
 B_star = params(13); % Dimensionless B parameter (Note that A_star+B_star=1.)
 Pv_star = params(14); % Dimensionless vapor saturation pressure at the far field temperature
 Req = params(15); % Dimensionless equilibrium bubble radius (LIC only)
-PA_star = params(16); % Dimensionless amplitude of the ultrasound pulse (UIC only)
-omega_star = params(17); % Dimensionless frequency of the ultrasound pulse (UIC only)
-delta_star = params(18); % Dimensionless time shift for the ultrasound pulse (UIC only)
-n = params(19); % Exponent that shapes the ultrasound pulse (UIC only)
+La = params(16); % Length ratio between distance from bubble center to wall and bubble maximum radius
+PA_star = params(17); % Dimensionless amplitude of the ultrasound pulse (UIC only)
+omega_star = params(18); % Dimensionless frequency of the ultrasound pulse (UIC only)
+delta_star = params(19); % Dimensionless time shift for the ultrasound pulse (UIC only)
+n = params(20); % Exponent that shapes the ultrasound pulse (UIC only)
 
 % Extract quantities from the state vector
 R = x(1); % Bubble wall radius
@@ -339,7 +342,7 @@ end
 rdot = U;
 udot = ((1+U/C_star)*(P - 1/(We*R) + S - 4*U/(Re*R) - 1 - Pext)  ...
     + R/C_star*(pdot + U/(We*R^2) + Sdot + 4*U^2/(Re*R^2) - Pextdot) ...
-    - (3/2)*(1-U/(3*C_star))*U^2)/((1-U/C_star)*R + 4/(C_star*Re));
+    - (3/2)*(1-U/(3*C_star))*U^2 - (R*U^2)/La)/((1-U/C_star)*R + 4/(C_star*Re) + R^2/(2*La));
 %******************************************
 
 dxdt = [rdot; udot; pdot; Sdot; Theta_prime; k_prime];
